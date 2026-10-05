@@ -270,6 +270,18 @@ body.needs-flow .home-panel { height: auto; min-height: 0; }
   .main-nav { display: none !important; }
   .standalone-view[hidden], .home-panel[hidden] { display: block !important; }
 }
+
+/* Address links to Google Maps and must wrap across lines. */
+.contact-field.address a {
+  display: block;
+  min-height: 0;
+  white-space: pre-line;
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-decoration-thickness: 1px;
+}
+.contact-field.address a:hover { text-decoration-color: currentColor; }
+</style>
 </style>
 </head>
 <body class="home-page">
@@ -313,7 +325,8 @@ const DETAILS = {
   officeAddress: "203, New Cloth Market, O/s Raipur Gate, Sarangpur, Ahmedabad, Gujarat, India - 380002", // Use \n between address lines.
   city: "",
   telephone: "+91 - 9974285158",
-  email: "gpgoyal@outlook.com"
+  email: "gpgoyal@outlook.com",
+  mapUrl: "https://www.google.com/maps/dir/?api=1&destination=2H9X%2B9CH%2C%20New%20Cloth%20Market%20Post%20Office%2C%20Swami%20Vivekananda%20Rd%2C%20New%20Cloth%20Market%2C%20Sarangpur%2C%20Sherkotda%2C%20Ahmedabad%2C%20Gujarat%20380002"   // Paste the Google Maps share link here. Left empty, a search link is built from the address.
 };
 
 (() => {
@@ -322,7 +335,16 @@ const DETAILS = {
   const $$ = s => [...document.querySelectorAll(s)];
   const address = $('.contact-field.address dd');
   if (DETAILS.officeAddress.trim()) {
-    address.textContent = DETAILS.officeAddress + '\n' + DETAILS.city;
+    const full = DETAILS.officeAddress + (DETAILS.city.trim() ? '\n' + DETAILS.city : '');
+    const mapLink = document.createElement('a');
+    mapLink.className = 'map-link';
+    mapLink.textContent = full;
+    mapLink.href = DETAILS.mapUrl.trim()
+      || 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(full.replace(/\n/g, ', '));
+    mapLink.target = '_blank';
+    mapLink.rel = 'noopener';
+    mapLink.setAttribute('aria-label', 'Open the office address in Google Maps');
+    address.replaceChildren(mapLink);
   } else {
     address.replaceChildren();
     const blank = document.createElement('span');
