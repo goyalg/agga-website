@@ -312,8 +312,16 @@ body.needs-flow .home-panel { height: auto; min-height: 0; }
   color: var(--navy);
   font-weight: 700;
   letter-spacing: .16em;
-  padding-bottom: .55rem;
-  border-bottom: 1px solid var(--line);
+}
+/* Short gold rule under each section label, as in the reference. */
+.contact-panel .panel-heading::after,
+.firm-panel .eyebrow::after {
+  content: "";
+  display: block;
+  width: 38px;
+  height: 2px;
+  margin-top: .6rem;
+  background: var(--gold);
 }
 .contact-grid .contact-field dt {
   font-size: .7rem;
@@ -465,6 +473,11 @@ body.needs-flow .site-shell { grid-template-rows: auto auto auto 42px; }
   .site-header { padding: .7rem 1rem; }
   .topbar { font-size: .7rem; padding: .45rem 1rem; }
   .brand-eyebrow { font-size: .56rem; letter-spacing: .26em; }
+  /* Keep the section label on phones so the panel reads like the desktop view. */
+  .firm-panel > .eyebrow { display: block; font-size: .68rem; letter-spacing: .14em; }
+  .firm-panel > .eyebrow::after { width: 32px; margin-top: .45rem; }
+  .firm-panel h1 { margin-top: .85rem; }
+  .firm-panel { justify-content: flex-start; padding-top: 1.1rem; }
 }
 </style>
 </head>
