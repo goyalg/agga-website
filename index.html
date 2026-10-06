@@ -271,17 +271,78 @@ body.needs-flow .home-panel { height: auto; min-height: 0; }
   .standalone-view[hidden], .home-panel[hidden] { display: block !important; }
 }
 
-/* Address links to Google Maps and must wrap across lines. */
-.contact-field.address a {
-  display: block;
-  min-height: 0;
-  white-space: pre-line;
-  text-decoration: underline;
-  text-decoration-color: var(--line);
-  text-decoration-thickness: 1px;
+/* CONTACT ICONS — original inline SVG, no external files or attribution. */
+.contact-field a {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  min-height: 44px;
+  max-width: 100%;
+  text-decoration: none;
+  white-space: normal;
 }
-.contact-field.address a:hover { text-decoration-color: currentColor; }
-</style>
+/* Hover is signalled by the icon alone — no underline. */
+.contact-field a:hover { color: var(--navy); }
+.contact-field a > span { min-width: 0; overflow-wrap: anywhere; }
+/* Icon height matches the text line box, so the glyph centres on the first
+   line however many lines the value wraps to. */
+.contact-icon {
+  width: 19px;
+  height: 1.5em;
+  flex: none;
+  fill: none;
+  stroke: var(--navy);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: .72;
+  overflow: visible;
+}
+.contact-field a:hover .contact-icon { opacity: 1; }
+.contact-field.address a { align-items: flex-start; min-height: 0; padding: .1rem 0 .15rem; }
+.contact-field.address a > span { white-space: pre-line; }
+/* One shape for all three rows — label above, icon flush left — so the icons
+   line up in a single column instead of the address being indented. */
+.contact-grid .contact-field { display: block; }
+.contact-grid .contact-field dt { margin-bottom: .1rem; }
+.contact-grid .contact-field.address { padding-bottom: .55rem; }
+
+/* CONTACT PANEL EMPHASIS — make it read as a set of actions, not static text. */
+.contact-panel .panel-heading {
+  color: var(--navy);
+  font-weight: 700;
+  letter-spacing: .16em;
+  padding-bottom: .55rem;
+  border-bottom: 1px solid var(--line);
+}
+.contact-grid .contact-field dt {
+  font-size: .7rem;
+  font-family: var(--mono);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.contact-field a { gap: .7rem; font-weight: 500; color: var(--navy); }
+.contact-field a > span { line-height: 1.45; }
+/* The icon sits in a white chip, which reads as something to press. */
+.contact-icon {
+  width: 30px;
+  height: 30px;
+  padding: 6px;
+  box-sizing: border-box;
+  background: #fff;
+  border-radius: 9px;
+  box-shadow: 0 1px 2px rgba(17, 38, 92, .10);
+  opacity: 1;
+  stroke-width: 1.6;
+}
+.contact-field a:hover .contact-icon,
+.contact-field a:focus-visible .contact-icon {
+  background: var(--navy);
+  stroke: #fff;
+  box-shadow: 0 2px 6px rgba(17, 38, 92, .22);
+}
+.contact-field.address .contact-icon { margin-top: .05rem; }
 </style>
 </head>
 <body class="home-page">
@@ -326,25 +387,56 @@ const DETAILS = {
   city: "",
   telephone: "+91 - 9974285158",
   email: "gpgoyal@outlook.com",
-  mapUrl: "https://www.google.com/maps/dir/?api=1&destination=2H9X%2B9CH%2C%20New%20Cloth%20Market%20Post%20Office%2C%20Swami%20Vivekananda%20Rd%2C%20New%20Cloth%20Market%2C%20Sarangpur%2C%20Sherkotda%2C%20Ahmedabad%2C%20Gujarat%20380002"   // Paste the Google Maps share link here. Left empty, a search link is built from the address.
+  mapUrl: "", // Paste the Google Maps share link for the exact pin. Left empty, a search link is built from the address.
+  // true  = email opens Gmail's compose window in a new tab (no "choose an app" prompt).
+  // false = uses mailto:, which opens whichever mail program the visitor has set as default.
+  emailOpensGmail: true
 };
 
 (() => {
   'use strict';
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
+
+  /* Original inline icons: no external files, no attribution, inherit the page colour. */
+  /* Each glyph is drawn to fill the same optical box (roughly x/y 3–21 of the
+     24-unit viewBox) so the three read as one set rather than three sizes. */
+  const ICONS = {
+    pin:   'M12 21c4.7-5.4 7-9.3 7-11.9a7 7 0 1 0-14 0C5 11.7 7.3 15.6 12 21z M12 12.4a2.7 2.7 0 1 0 0-5.4 2.7 2.7 0 0 0 0 5.4z',
+    phone: 'M6.9 3.2h3.1l1.6 4.1-2.1 1.5a12.6 12.6 0 0 0 5.7 5.7l1.5-2.1 4.1 1.6v3.1a2 2 0 0 1-2.2 2A16.9 16.9 0 0 1 4.9 5.4a2 2 0 0 1 2-2.2z',
+    mail:  'M3.4 5.2h17.2v13.6H3.4z M3.4 6 12 13.1 20.6 6'
+  };
+  function icon(name) {
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('class', 'contact-icon');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('focusable', 'false');
+    ICONS[name].split(' M').forEach((d, i) => {
+      const path = document.createElementNS(ns, 'path');
+      path.setAttribute('d', i ? 'M' + d : d);
+      svg.appendChild(path);
+    });
+    return svg;
+  }
+  function label(text) {
+    const span = document.createElement('span');
+    span.textContent = text;
+    return span;
+  }
+
   const address = $('.contact-field.address dd');
   if (DETAILS.officeAddress.trim()) {
     const full = DETAILS.officeAddress + (DETAILS.city.trim() ? '\n' + DETAILS.city : '');
-    const mapLink = document.createElement('a');
-    mapLink.className = 'map-link';
-    mapLink.textContent = full;
-    mapLink.href = DETAILS.mapUrl.trim()
+    const link = document.createElement('a');
+    link.href = DETAILS.mapUrl.trim()
       || 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(full.replace(/\n/g, ', '));
-    mapLink.target = '_blank';
-    mapLink.rel = 'noopener';
-    mapLink.setAttribute('aria-label', 'Open the office address in Google Maps');
-    address.replaceChildren(mapLink);
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.setAttribute('aria-label', 'Open the office address in Google Maps');
+    link.append(icon('pin'), label(full));
+    address.replaceChildren(link);
   } else {
     address.replaceChildren();
     const blank = document.createElement('span');
@@ -352,14 +444,30 @@ const DETAILS = {
     blank.setAttribute('aria-hidden', 'true');
     address.append(blank, document.createTextNode(DETAILS.city));
   }
+
   const contactValues = $$('.contact-field:not(.address) dd');
-  [DETAILS.telephone, DETAILS.email].forEach((value, index) => {
-    if (!value.trim()) return;
+  [
+    { value: DETAILS.telephone, glyph: 'phone', aria: 'Call the office' },
+    { value: DETAILS.email,     glyph: 'mail',  aria: 'Send an email to the office' }
+  ].forEach((item, index) => {
+    if (!item.value.trim()) return;
     const link = document.createElement('a');
-    link.textContent = value;
-    link.href = index === 0 ? 'tel:' + value.replace(/[^+\d]/g, '') : 'mailto:' + value;
+    if (index === 0) {
+      link.href = 'tel:' + item.value.replace(/[^+\d]/g, '');
+    } else if (DETAILS.emailOpensGmail) {
+      // Gmail's web compose window — avoids the operating system's
+      // "choose an app" prompt when no default mail program is set.
+      link.href = 'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(item.value);
+      link.target = '_blank';
+      link.rel = 'noopener';
+    } else {
+      link.href = 'mailto:' + item.value;
+    }
+    link.setAttribute('aria-label', item.aria);
+    link.append(icon(item.glyph), label(item.value));
     contactValues[index].replaceChildren(link);
   });
+
   $('#year').textContent = new Date().getFullYear();
 
   const panels = $$('.home-panel');
